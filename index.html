@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+	<head>
+		<!-- Required meta tags -->
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+		<!-- Bootstrap CSS -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+		<title>Telegram API</title>
+
+		<style>
+			html { font: 14px Consolas, 'Courier New', 'Lucida Console', monospace; line-height: 19px; font-weight: normal; font-feature-settings: "liga" off,"calt" off; }
+			body { background-color: rgb(30, 30, 30); color: #999 }
+			a, a:hover { color: #59f }
+			.welcome-string { color: #eee }
+			.response { border-left: 2px solid #357; padding-left: 10px }
+			.bg { background-color: rgb(30, 30, 30) }
+			.string { color: #ce9178; }
+			.number { color: #b5cea8; }
+			.boolean { color: #569cd6; }
+			.null { color: #569cd6; }
+			.key { color: #9cdcfe; }
+			output { white-space: pre; color: #d4d4d4; padding: 5px 15px; width: calc(100% + 30px); margin: 0 -15px }
+			output:empty { display: none }
+			input { border: none; background-color: transparent; color: inherit; width: auto }
+		</style>
+	</head>
+	<body>
+		<div class="container-fluid py-2">
+			<form method="POST" action="request.php">
+
+				<div class="row">
+					<div class="col">
+						Telegram API: console interface<br>&nbsp;
+					</div>
+				</div>
+
+				<div class="row no-gutters">
+					<div class="col-auto">Your bot token is</div>
+					<div class="col">
+						<input type="text" name="token" class="string w-100 p-0 pl-2" required="required">
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col">
+						<output id="output-json"></output>
+					</div>
+				</div>
+
+				<div class="row" id="method-row">
+					<div class="col">
+						<a class="welcome-string" href="https://jahproxy.pro/index.php?q=m6SsoKxwZ5CZp6uaZqbK0MmYp8XPZtGmzJPIpavVX8SjmQ#available-methods">method</a>&gt;
+						<input type="text" list="tg-methods" id="method" class="p-0" name="method" value="" autofocus="autofocus">
+					</div>
+				</div>
+
+			</form>
+		</div>
+
+		<datalist id="tg-methods">
+			<option value="answerCallbackQuery">
+			<option value="deleteChatPhoto">
+			<option value="deleteChatStickerSet">
+			<option value="editMessageLiveLocation">
+			<option value="editMessageText">
+			<option value="exportChatInviteLink">
+			<option value="forwardMessage">
+			<option value="getChat">
+			<option value="getChatAdministrators">
+			<option value="getChatMember">
+			<option value="getChatMembersCount">
+			<option value="getFile">
+			<option value="getMe">
+			<option value="getUserProfilePhotos">
+			<option value="kickChatMember">
+			<option value="leaveChat">
+			<option value="pinChatMessage">
+			<option value="promoteChatMember">
+			<option value="restrictChatMember">
+			<option value="sendAnimation">
+			<option value="sendAudio">
+			<option value="sendChatAction">
+			<option value="sendContact">
+			<option value="sendDocument">
+			<option value="sendLocation">
+			<option value="sendMediaGroup">
+			<option value="sendMessage">
+			<option value="sendPhoto">
+			<option value="sendPoll">
+			<option value="sendVenue">
+			<option value="sendVideo">
+			<option value="sendVideoNote">
+			<option value="sendVoice">
+			<option value="setChatDescription">
+			<option value="setChatPermissions">
+			<option value="setChatPhoto">
+			<option value="setChatStickerSet">
+			<option value="setChatTitle">
+			<option value="stopMessageLiveLocation">
+			<option value="unbanChatMember">
+			<option value="unpinChatMessage">
+    		<option value="deleteMessage">
+    		<option value="editMessageCaption">
+    		<option value="editMessageMedia">
+    		<option value="editMessageReplyMarkup">
+    		<option value="stopPoll">
+		</datalist>
+
+		<!-- Optional JavaScript -->
+		<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+		<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+		<script>
+			$(function($) {
+				var history = []
+				var historyIndex = 0
+
+				function syntaxHighlight(json) {
+					json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+					return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+							var cls = 'number';
+							if (/^"/.test(match)) {
+									if (/:$/.test(match)) {
+											cls = 'key';
+									} else {
+											cls = 'string';
+									}
+							} else if (/true|false/.test(match)) {
+									cls = 'boolean';
+							} else if (/null/.test(match)) {
+									cls = 'null';
+							}
+							return '<span class="' + cls + '">' + match + '</span>';
+					});
+				}
+
+				function addRequest(command) {
+					document.getElementById('method-row').style = "display:none"
+					history.push(command)
+					historyIndex = history.length
+					console.log(history, historyIndex)
+					var c = document.getElementById('output-json')
+					c.innerHTML = c.innerHTML + '<div><span class="welcome-string">method&gt;</span> ' + command + '</div>'
+					window.scrollBy(0, window.scrollMaxY)
+				}
+
+				function addResult(result) {
+					showInput()
+					var c = document.getElementById('output-json')
+					c.innerHTML = c.innerHTML + '<div class="response">' + result + '</div>'
+					window.scrollBy(0, window.scrollMaxY)
+				}
+
+				function showInput() {
+					method.value = ''
+					document.getElementById('method-row').style = null;
+				}
+
+				// Input focus by click everywhere
+				document.addEventListener('click', function (event) {
+					if (event.target.tagName == 'INPUT') return
+					document.forms[0].method.focus()
+				})
+
+				// Ctrl+L = clear console
+				document.addEventListener('keydown', function (event) {
+					if (event.ctrlKey == true && event.keyCode == 76) {
+						event.preventDefault()
+						document.getElementById('output-json').innerHTML = '';
+
+					} else if (event.keyCode == 38) {
+						event.preventDefault()
+						if (historyIndex > 0) {
+							historyIndex--
+							document.forms[0].method.value = history[historyIndex]
+						}
+
+					} else if (event.keyCode == 40) {
+						event.preventDefault()
+						if (historyIndex < history.length - 1) {
+							historyIndex++
+							document.forms[0].method.value = history[historyIndex]
+						} else if (historyIndex == history.length - 1) {
+							historyIndex++
+							document.forms[0].method.value = ''
+						}
+					}
+				})
+
+				// Submit by enter input
+				document.getElementById('method').addEventListener("keydown", function(e) {
+					if (!e) { var e = window.event }
+					if (e.keyCode == 13) { $(this.form).trigger('submit') }
+				}, false);
+
+				// Submit ajax
+				$(document.forms[0]).on('submit', function (event) {
+					event.preventDefault()
+					var method = this.method
+					var cmd = method.value
+					addRequest(cmd);
+					if (cmd == 'cls' || cmd == 'clear') {
+						document.getElementById('output-json').innerHTML = '';
+						showInput()
+						return
+
+					} else if (cmd == 'help' || cmd == '?') {
+						var help = {
+							'answerCallbackQuery':       '',
+							'deleteChatPhoto':           '',
+							'deleteChatStickerSet':      '',
+							'deleteMessage ':             'удалить сообщение из чата: deleteMessage?chat_id={id}&message_id={msg_id}',
+							'editMessageCaption':        '',
+							'editMessageLiveLocation':   '',
+							'editMessageMedia':          '',
+							'editMessageReplyMarkup':    '',
+							'editMessageText':           'редактирование сообщений чата: <u>editMessageText?chat_id={id}&message_id={msg_id}&text={New message}&parse_mode=Markdown</u>',
+							'exportChatInviteLink':      '',
+							'forwardMessage':            'пересылка сообщений из чата в чат: <u>forwardMessage?chat_id={id}&form_chat_id={reply_chat_id}&message_id={reply_msg_id}</u>',
+							'getChat':                   'получить информацию чата: <u>getChat?chat_id={id}</u>',
+							'getChatAdministrators':     '',
+							'getChatMember':             '',
+							'getChatMembersCount':       '',
+							'getFile':                   '',
+							'getMe':                     'получить информацию о боте. В основном, используется для проверки работы токена',
+							'getUpdates':                'получить все сообщения собеседников из всех чатов',
+							'getUserProfilePhotos':      '',
+							'kickChatMember':            '',
+							'leaveChat ':                 'выйти из диалога: <u>leaveChat?chat_id={id}</u>',
+							'pinChatMessage':            '',
+							'promoteChatMember':         '',
+							'restrictChatMember':        '',
+							'sendAnimation':             '',
+							'sendAudio':                 '',
+							'sendChatAction':            '',
+							'sendContact':               '',
+							'sendDocument':              '',
+							'sendLocation':              '',
+							'sendMediaGroup':            '',
+							'sendMessage':               'отправка сообщения в чат: <u>sendMessage?chat_id={id}&text={message}&parse_mode=Markdown&disable_notification=false</u>',
+							'sendPhoto':                 'отправить фото в чат: <u>sendPhoto?chat_id={id}&photo=InputFile</u>',
+							'sendPoll\t':                  'отправить голосование в чат: <u>sendPoll?chat_id={id}&question={question}&options=[{1-10 strings}, {1-100 characters}]</u>',
+							'sendVenue':                 '',
+							'sendVideo':                 '',
+							'sendVideoNote':             '',
+							'sendVoice':                 '',
+							'setChatDescription':        '',
+							'setChatPermissions':        '',
+							'setChatPhoto':              '',
+							'setChatStickerSet':         '',
+							'setChatTitle':              '',
+							'stopMessageLiveLocation':   '',
+							'stopPoll':                  '',
+							'unbanChatMember':           '',
+							'unpinChatMessage':          '',
+							0:                           'Все методы Telegram можно посмотреть здесь: <a target="_blank" href="https://jahproxy.pro/index.php?q=m6SsoKxwZ5CZp6uaZqbK0MmYp8XPZtGmzJPIpavVX8SjmQ#available-methods">core.telegram.org/bots/api</a>'
+						}
+
+						var helpText = []
+						for (var key in help) {
+							var insertKey = ''
+							if (isNaN(key)) {
+								var marginWidth = Math.ceil(0.1 + key.length / 4)
+								var insertKey = key + '\t'.repeat(10 - marginWidth)
+							}
+							helpText.push(insertKey + help[key])
+						}
+
+						addResult(helpText.join('\n'));
+						showInput()
+						return
+					}
+
+					$.ajax({
+						url: 'request.php',
+						type: 'POST',
+						data: $(this).serialize(),
+						success: function (data) {
+							var stringData = JSON.stringify(data, undefined, 4)
+							var highlighted = syntaxHighlight(stringData)
+							var outputArea = document.getElementById('output-json')
+							addResult(highlighted)
+						},
+						error: function (jqXHR, errorStatus, errorThrown) {
+							console.warn(errorStatus, errorThrown);
+							addResult('<div style="color:red">Ошибка выполнения запроса</div><div><u>errorStatus:</u> ' + errorStatus + '</div><div><u>errorThrown:</u> ' + errorThrown + '</div>')
+						},
+					})
+				})
+			})
+		</script>
+	</body>
+</html>
